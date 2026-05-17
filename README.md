@@ -7,13 +7,13 @@ When an agent does something frustrating repeatedly (hedging language, over-expl
 ## Installation
 
 ```bash
-npm install -g @agent-sh/banthis
+npm install -g github:agent-sh/banthis
 ```
 
 Or use via `npx`:
 
 ```bash
-npx @agent-sh/banthis@latest add "No hedging" "Do not start responses with 'To be honest' or 'I think' — it undermines confidence."
+npx --yes github:agent-sh/banthis add "No hedging" "Do not start responses with 'To be honest' or 'I think' — it undermines confidence."
 ```
 
 ## Core Commands

@@ -30,7 +30,7 @@ $ARGUMENTS
 2. Craft two strings:
    - **title**: Short (under 60 chars), framed as a prohibition (e.g. `No 'let me be honest' preambles`)
    - **rule**: 1–2 sentences in the form `Do not X — reason.`
-3. Call the tool (prefer the local `banthis` if available, otherwise `npx @agent-sh/banthis@latest`):
+3. Call the tool (prefer the local `banthis` if available, otherwise `npx --yes github:agent-sh/banthis`):
 
 ```bash
 banthis add "<title>" "<rule>"

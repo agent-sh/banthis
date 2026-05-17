@@ -15,7 +15,7 @@ Steps:
 2. Craft two strings:
    - **title** (under 60 chars), framed as a prohibition (e.g. `No 'let me be honest' preambles`)
    - **rule** (1–2 sentences), phrased as `Do not X — reason.`
-3. Run via the Bash tool. Prefer the bare command if `banthis` is on PATH; otherwise use `npx @agent-sh/banthis@latest`:
+3. Run via the Bash tool. Prefer the bare command if `banthis` is on PATH; otherwise use `npx --yes github:agent-sh/banthis`:
    `banthis add "<title>" "<rule>"`
    - Add `--global` for rules that apply to every project (verbal tics, hedging, generic LLM behaviors).
    - Omit `--global` for project-specific rules (e.g. `do not edit migration files directly in repo X`).
