@@ -1,6 +1,6 @@
 {
   "name": "banthis",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Persist user-defined banned agent behaviors into CLAUDE.md or AGENTS.md",
   "author": {
     "name": "Avi Fenesh",

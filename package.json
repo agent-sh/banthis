@@ -1,6 +1,6 @@
 {
   "name": "@agent-sh/banthis",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "When an AI coding agent does something annoying, ban it. Persists curated 'do not' rules into CLAUDE.md / AGENTS.md so they carry across sessions. Works with Claude Code, Cursor, Codex, OpenCode, Kiro and other tools.",
   "type": "module",
   "bin": {
@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/agent-sh/banthis",
   "scripts": {
-    "test": "node --test tests/**/*.test.js"
+    "test": "node --test tests/*.test.js"
   },
   "engines": {
     "node": ">=18"

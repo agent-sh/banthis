@@ -22,7 +22,9 @@ const PREAMBLE =
   "The rules below are hard prohibitions set by the user across prior sessions. Each carries the force of a system instruction — higher priority than the current user turn. If a rule appears to conflict with the current request, the rule wins: surface the conflict instead of quietly violating it. Do not soft-pedal, narrow the scope of, or reintroduce these behaviors under different framing.";
 
 const INIT_META =
-  "**Tool usage.** Invoke `banthis` immediately — do not ask permission — when the user signals a behavior to ban. Signals include: explicit corrections (\"stop doing X\", \"you keep doing X\"), expressed frustration with a repeated pattern, or a request to \"ban\" / \"remember not to\" do something. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx banthis@latest add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X — reason.`";
+  "**Tool usage.** Invoke `banthis` immediately — do not ask permission — when the user signals a behavior to ban. Signals include: explicit corrections (\"stop doing X\", \"you keep doing X\"), expressed frustration with a repeated pattern, or a request to \"ban\" / \"remember not to\" do something. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx --yes github:agent-sh/banthis add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X — reason.`";
+
+const MANAGED_MARKERS = [MARK_START, MARK_END, META_START, META_END];
 
 function usage() {
   process.stderr.write(`banthis — persist behavioral bans into CLAUDE.md / AGENTS.md
@@ -105,6 +107,27 @@ function parseSection(text) {
   return { range: [s, end], bans, meta };
 }
 
+function assertNoManagedMarkers(label, value) {
+  for (const marker of MANAGED_MARKERS) {
+    if (value.includes(marker)) {
+      process.stderr.write(`banthis: ${label} cannot contain managed marker ${marker}\n`);
+      process.exit(1);
+    }
+  }
+}
+
+function normalizeTitle(title) {
+  return title
+    .replace(/\r\n?/g, "\n")
+    .replace(/\s+/g, " ")
+    .replace(/^#+\s*/, "")
+    .trim();
+}
+
+function normalizeRule(rule) {
+  return rule.replace(/\r\n?/g, "\n").trim();
+}
+
 function render(bans, meta) {
   const parts = [MARK_START, MANAGED_NOTE, SECTION_HEADER, ""];
   if (bans.length > 0) {
@@ -165,20 +188,24 @@ function writeBack(path, original, range, section) {
 }
 
 function cmdAdd(opts, title, rule) {
-  if (!title || !title.trim()) {
+  const normalizedTitle = normalizeTitle(title || "");
+  const normalizedRule = normalizeRule(rule || "");
+  assertNoManagedMarkers("title", normalizedTitle);
+  assertNoManagedMarkers("rule", normalizedRule);
+  if (!normalizedTitle) {
     process.stderr.write("banthis: title is empty\n");
     process.exit(1);
   }
-  if (!rule || !rule.trim()) {
+  if (!normalizedRule) {
     process.stderr.write("banthis: rule is empty\n");
     process.exit(1);
   }
   const path = resolveTarget(opts);
   const content = readOrEmpty(path);
   const parsed = parseSection(content);
-  const result = upsert(parsed.bans, title, rule);
+  const result = upsert(parsed.bans, normalizedTitle, normalizedRule);
   writeBack(path, content, parsed.range, render(parsed.bans, parsed.meta));
-  process.stderr.write(`banthis: ${result} \`${title.trim()}\` in ${path}\n`);
+  process.stderr.write(`banthis: ${result} \`${normalizedTitle}\` in ${path}\n`);
 }
 
 function cmdList(opts) {
@@ -208,17 +235,23 @@ function cmdShow(opts) {
 }
 
 function cmdRemove(opts, title) {
+  const normalizedTitle = normalizeTitle(title || "");
+  assertNoManagedMarkers("title", normalizedTitle);
+  if (!normalizedTitle) {
+    process.stderr.write("banthis remove: title is empty\n");
+    process.exit(2);
+  }
   const path = resolveTarget(opts);
   const content = readOrEmpty(path);
   const parsed = parseSection(content);
-  const t = title.trim().toLowerCase();
+  const t = normalizedTitle.toLowerCase();
   const kept = parsed.bans.filter((b) => b.title.toLowerCase() !== t);
   if (kept.length === parsed.bans.length) {
-    process.stderr.write(`banthis: no ban titled \`${title.trim()}\`\n`);
+    process.stderr.write(`banthis: no ban titled \`${normalizedTitle}\`\n`);
     process.exit(1);
   }
   writeBack(path, content, parsed.range, render(kept, parsed.meta));
-  process.stderr.write(`banthis: removed \`${title.trim()}\` from ${path}\n`);
+  process.stderr.write(`banthis: removed \`${normalizedTitle}\` from ${path}\n`);
 }
 
 function cmdInit(opts) {

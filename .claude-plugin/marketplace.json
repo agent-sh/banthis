@@ -1,7 +1,7 @@
 {
   "name": "banthis",
   "description": "Capture repeated agent mistakes as durable negative rules in CLAUDE.md or AGENTS.md",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "owner": {
     "name": "Avi Fenesh",
     "url": "https://github.com/avifenesh"
@@ -18,7 +18,7 @@
       "name": "banthis",
       "source": ".",
       "description": "Persist banned behaviors and teach agents to invoke banthis when the user says to stop doing something",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "category": "productivity"
     }
   ]
