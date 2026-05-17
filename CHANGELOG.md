@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+- Hardened CLI writes against managed-marker injection in titles or rules.
+- Normalized multi-line / markdown-looking titles into stable section headings.
+- Expanded CLI tests for idempotent updates, default target selection, global mode, invalid invocations, and slash-command install output.
+- Updated CI to test Node.js 18, 20, and 22.
+
 ## 0.3.0
 
 - Promoted to official `@agent-sh/banthis` plugin under the agentsys umbrella.
