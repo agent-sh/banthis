@@ -1,0 +1,24 @@
+{
+  "name": "banthis",
+  "description": "Persist banned agent behaviors into durable project or global instructions",
+  "skills": "./skills",
+  "interface": {
+    "displayName": "Banthis",
+    "shortDescription": "Durable negative memory for agent behavior",
+    "longDescription": "Banthis lets agents turn user frustration into persistent hard prohibitions in CLAUDE.md or AGENTS.md, with a tiny CLI for adding, listing, showing, removing, and initializing behavior bans.",
+    "developerName": "Avi Fenesh",
+    "category": "developer-tools",
+    "capabilities": [
+      "memory",
+      "agent-configuration",
+      "cli",
+      "behavior-rules"
+    ],
+    "websiteUrl": "https://github.com/agent-sh/banthis",
+    "defaultPrompt": [
+      "Ban this repeated behavior",
+      "Initialize banthis in this project",
+      "List banned behaviors"
+    ]
+  }
+}

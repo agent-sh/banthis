@@ -1,0 +1,20 @@
+{
+  "name": "banthis",
+  "version": "0.3.0",
+  "description": "Persist user-defined banned agent behaviors into CLAUDE.md or AGENTS.md",
+  "author": {
+    "name": "Avi Fenesh",
+    "url": "https://github.com/avifenesh"
+  },
+  "homepage": "https://github.com/agent-sh/banthis",
+  "repository": "https://github.com/agent-sh/banthis",
+  "license": "MIT",
+  "keywords": [
+    "negative-memory",
+    "agent-memory",
+    "agent-config",
+    "codex",
+    "claude-code",
+    "opencode"
+  ]
+}

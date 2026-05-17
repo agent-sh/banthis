@@ -1,0 +1,49 @@
+{
+  "name": "@agent-sh/banthis",
+  "version": "0.3.0",
+  "description": "When an AI coding agent does something annoying, ban it. Persists curated 'do not' rules into CLAUDE.md / AGENTS.md so they carry across sessions. Works with Claude Code, Cursor, Codex, OpenCode, Kiro and other tools.",
+  "type": "module",
+  "bin": {
+    "banthis": "./bin/banthis.mjs"
+  },
+  "files": [
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "bin/",
+    "commands/",
+    "skills/",
+    "README.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "components.json"
+  ],
+  "keywords": [
+    "agentsys",
+    "banthis",
+    "claude-md",
+    "agents-md",
+    "agent-sh",
+    "claude-code",
+    "cursor",
+    "codex",
+    "negative-rules",
+    "dx"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Avi Fenesh",
+    "url": "https://github.com/avifenesh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agent-sh/banthis.git"
+  },
+  "homepage": "https://github.com/agent-sh/banthis",
+  "scripts": {
+    "test": "node --test tests/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
