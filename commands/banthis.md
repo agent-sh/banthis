@@ -6,6 +6,8 @@ allowed-tools: Bash(banthis:*), Bash(npx:*)
 
 The user wants to ban a behavior. Persist it into the project's `CLAUDE.md` or `AGENTS.md` via the `banthis` CLI so it survives across sessions.
 
+Validate the free-form input before use: if it is empty, infer the behavior from the most recent explicit correction; if several behaviors are plausible, choose the most recent one the user named.
+
 User input: $ARGUMENTS
 
 Steps:
@@ -20,3 +22,21 @@ Steps:
 4. Confirm in one short line: `Banned: <title>`.
 
 Invoke the tool directly after the user names the behavior; the final response can briefly report the title that was banned.
+
+## Example
+
+Input:
+`/banthis stop ending with vague optional follow-up offers`
+
+Command:
+```bash
+banthis add "No vague endings" "Do not end with vague optional follow-up offers — the user wants concise completion."
+```
+
+## Verification
+
+Confirm the `banthis` command exited successfully and wrote to the expected target file.
+
+## Output Format
+
+Return one short line: `Banned: <title>`. If the command fails, explain the failure and the exact command that needs to be retried.

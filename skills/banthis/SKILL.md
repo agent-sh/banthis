@@ -1,6 +1,6 @@
 ---
 name: banthis
-description: "Use when the user expresses frustration with a repeated agent behavior ('stop doing X', 'you keep doing X', 'ban this'). Immediately capture it as a permanent negative rule using the banthis tool."
+description: "Use when user asks to ban, stop, or remember not to repeat an agent behavior ('stop doing X', 'you keep doing X', 'ban this'). Immediately capture it as a permanent negative rule using the banthis tool."
 version: 0.3.0
 argument-hint: "[behavior description]"
 allowed-tools: Bash(banthis:*), Bash(npx:*)
