@@ -168,6 +168,6 @@ test("skill, command, docs, and CI stay aligned with the supported install path"
   assert.match(ci, /node-version:\s*\[18, 22, 24\]/);
   assert.match(ci, /actions\/checkout@[0-9a-f]{40}/);
   assert.match(ci, /actions\/setup-node@[0-9a-f]{40}/);
-  assert.match(ci, /agent-sh\/agnix@v0\.26\.0/);
+  assert.match(ci, /agent-sh\/agnix@[0-9a-f]{40} # v0\.26\.0/);
   assert.match(ci, /npm pack --dry-run/);
 });
