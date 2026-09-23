@@ -1,52 +1,44 @@
 ---
 name: banthis
 description: "Use when the user explicitly asks to ban an agent behavior ('ban this', 'never again', 'stop doing X', 'remember not to X'). Captures it as a permanent negative rule with the banthis CLI."
-version: 0.4.0
+version: 0.5.0
 argument-hint: "[behavior description]"
 allowed-tools: Bash(banthis:*), Bash(npx:*)
 ---
 
-# Banthis Skill
+# banthis
 
-When the user explicitly asks to ban an agent behavior, capture it with `banthis` so the rule persists across future sessions.
+Turn a behavior the user wants gone into a permanent rule in `CLAUDE.md` or `AGENTS.md`, so later sessions do not repeat it.
 
-## Parse Arguments
-
-Use `$ARGUMENTS` as the behavior to ban. If it is empty, infer the behavior from the most recent explicit correction in the conversation.
+Behavior to ban:
 
 ```text
 $ARGUMENTS
 ```
 
-## When to Activate
+If that is empty, use the user's most recent explicit correction.
 
-Only on an explicit signal from the user:
+## When it applies
 
-- "ban this", "ban X"
-- "never again", "don't ever X again"
-- "stop doing X"
-- "remember not to X"
+Only when the user asks for a ban in words: "ban this", "never again", "stop doing X", "remember not to X". A pattern you noticed yourself, or a correction the user made without asking for a ban, does not count. The user decides what becomes permanent, because a ban outranks their future requests.
 
-Do not ban on your own judgment. A pattern you notice, or a correction the user made without asking for a ban, is not a trigger: the user decides what becomes a permanent rule.
+Once they ask, act without asking permission.
 
-## How to Use
+## What to write
 
-1. **Do not ask for permission.** The user already asked for the ban.
-2. Craft two strings:
-   - **title**: Short (under 60 chars), framed as a prohibition (e.g. `No 'let me be honest' preambles`)
-   - **rule**: 1-2 sentences in the form `Do not X: reason.`
-3. Call the tool (prefer the local `banthis` if available, otherwise `npx --yes github:agent-sh/banthis`):
+- **title**: under 60 characters, framed as a prohibition, e.g. `No 'let me be honest' preambles`.
+- **rule**: one or two sentences, `Do not X: reason.` The reason lets a future agent handle cases the title does not name.
 
 ```bash
 banthis add "<title>" "<rule>"
 ```
 
-Use `--global` only for behaviors that should apply to every project (verbal tics, generic LLM habits).
+Use `banthis` if it is on PATH, otherwise `npx --yes github:agent-sh/banthis`. Add `--global` for behaviors that apply to every project (verbal tics, generic model habits); leave it off for project-specific rules.
 
-4. Confirm in one short line: `Banned: <title>`
+If the target file has no banthis meta-rule yet, `banthis init` adds the short instruction that tells future agents to call the tool.
 
-## Important Notes
+## Done
 
-- Rules added by `banthis` go into a managed section of `CLAUDE.md` or `AGENTS.md` and have higher priority than normal instructions.
-- Run `banthis init` in projects if the meta-rule is not yet present (it teaches agents to invoke `banthis` when the user asks for a ban).
-- banthis works on its own. If a config linter such as `agnix` is installed, it can validate the resulting CLAUDE.md / AGENTS.md; nothing here depends on it.
+The command exits 0 and reports the file it wrote. Reply with one line: `Banned: <title>`. On failure, show the error and the exact command to retry.
+
+banthis stands alone. A config linter such as `agnix` can validate the resulting file if one is installed.

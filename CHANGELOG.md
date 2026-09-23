@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+
+- Rewrote the `/banthis` command and the skill for current models: goal, constraints with reasons, a definition of done and the output line, in place of numbered steps and repeated rules. Command name, argument, CLI calls and the `Banned: <title>` reply are unchanged.
+
 ## 0.4.0
 
 - A managed section that lost its `<!-- banthis:end -->` marker is repaired in place (end marker restored after the last rule of the block) instead of getting a second block.

@@ -140,7 +140,7 @@ test("package and plugin manifests describe banthis consistently", () => {
   const components = JSON.parse(readFileSync("components.json", "utf8"));
 
   assert.equal(pkg.name, "@agent-sh/banthis");
-  assert.equal(pkg.version, "0.4.0");
+  assert.equal(pkg.version, "0.5.0");
   assert.equal(pkg.bin.banthis, "./bin/banthis.mjs");
   assert.ok(pkg.files.includes("bin/"));
   assert.ok(pkg.files.includes("commands/"));
@@ -163,7 +163,7 @@ test("skill, command, docs, and CI stay aligned with the supported install path"
   const readme = readFileSync("README.md", "utf8");
   const ci = readFileSync(".github/workflows/ci.yml", "utf8");
 
-  assert.match(skill, /^version: 0\.4\.0$/m);
+  assert.match(skill, /^version: 0\.5\.0$/m);
   assert.match(skill, /npx --yes github:agent-sh\/banthis/);
   assert.match(command, /npx --yes github:agent-sh\/banthis/);
   assert.match(readme, /npm install -g github:agent-sh\/banthis/);
