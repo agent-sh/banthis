@@ -17,4 +17,4 @@
 
 ## Related Tools
 
-This tool is the negative counterpart to positive memory systems (e.g. the upcoming `axiom`). It works best alongside `agnix`, `skill-curator`, and `system-prompt-curator`.
+banthis does not depend on other plugins. Keep it that way: `agnix` or any other tool is an optional companion, never a requirement.
