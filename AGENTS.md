@@ -1,4 +1,4 @@
-# AGENTS.md — banthis
+# AGENTS.md: banthis
 
 `banthis` is a small but high-leverage DX tool for capturing negative rules ("never do this") that should survive across all future agent sessions.
 
@@ -14,9 +14,9 @@ This repository ships a dependency-free Node.js CLI, one slash command, and one 
 
 ## Design Principles
 
-- **Minimal surface** — Keep this as a tiny CLI plus slash command.
-- **Permanent effect** — Once a rule is added, it should be very hard for an agent to ignore it.
-- **Human in the loop for quality** — The tool captures human frustration in the moment. The quality of the rule depends on the human phrasing it well.
+- **Minimal surface**: Keep this as a tiny CLI plus slash command.
+- **Permanent effect**: Once a rule is added, it should be very hard for an agent to ignore it.
+- **Human in the loop for quality**: The tool captures human frustration in the moment. The quality of the rule depends on the human phrasing it well.
 
 ## When Modifying
 
@@ -26,5 +26,4 @@ This repository ships a dependency-free Node.js CLI, one slash command, and one 
 
 ## Relationship to Other Tools
 
-- Complements `axiom` (positive memory / principles) — banthis is the negative counterpart.
-- Works alongside `agnix` (validation) and `skill-curator` / `system-prompt-curator`.
+banthis stands alone. It does not require any other plugin; `agnix` can validate the files it writes if it is installed.

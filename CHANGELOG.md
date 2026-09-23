@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- A managed section that lost its `<!-- banthis:end -->` marker is repaired in place (end marker restored after the last rule of the block) instead of getting a second block.
+- Headings inside fenced code in a rule no longer end the block during repair or split a rule when parsing.
+- Rewriting an existing section no longer adds a blank line after it on every write.
+- The preamble and the `init` rule no longer write an em dash into CLAUDE.md / AGENTS.md. Rules are taught as `Do not X: reason.`
+- The skill and the `init` rule trigger only on an explicit user ask (ban this, never again, stop doing X, remember not to X), not on the agent's own reading of a pattern.
+- Docs no longer assume axiom, skill-curator or system-prompt-curator are installed.
+
 ## 0.3.1
 
 - Hardened CLI writes against managed-marker injection in titles or rules.

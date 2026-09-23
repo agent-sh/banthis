@@ -1,4 +1,4 @@
-# CLAUDE.md — banthis
+# CLAUDE.md: banthis
 
 Follow the Karpathy Guidelines (simplicity, surgical changes, clear success criteria) in this repository.
 
@@ -7,7 +7,7 @@ Follow the Karpathy Guidelines (simplicity, surgical changes, clear success crit
 ## Key Constraints
 
 - Keep the surface tiny so the "I want to ban this right now" flow stays fast.
-- The managed section markers (`<!-- banthis:start -->` / `<!-- banthis:end -->`) and the preamble text are part of the contract with agents — change them with extreme care.
+- The managed section markers (`<!-- banthis:start -->` / `<!-- banthis:end -->`) and the preamble text are part of the contract with agents: change them with extreme care.
 - Treat the `init` meta-rule as the highest-impact text in the project. Keep the instruction clear that agents invoke `banthis` directly after the user signals a behavior ban.
 
 ## Testing

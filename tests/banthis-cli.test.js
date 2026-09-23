@@ -51,12 +51,12 @@ test("shortcut add is idempotent, case-insensitive, and normalizes unsafe headin
   const dir = mkdtempSync(join(tmpdir(), "banthis-"));
 
   run(["--dir", dir, "### No\nvague endings", "Do not hedge."], { cwd: dir });
-  run(["--dir", dir, "add", "no vague endings", "Do not hedge — the user banned hedging."], { cwd: dir });
+  run(["--dir", dir, "add", "no vague endings", "Do not hedge: the user banned hedging."], { cwd: dir });
 
   const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
   assert.equal([...target.matchAll(/^### /gm)].length, 1);
   assert.match(target, /### no vague endings/);
-  assert.match(target, /Do not hedge — the user banned hedging\./);
+  assert.match(target, /Do not hedge: the user banned hedging\./);
   assert.doesNotMatch(target, /### ###/);
 });
 
@@ -81,6 +81,11 @@ test("cold start inserts the managed section after an existing h1", () => {
   const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
   assert.match(target, /^# Project Rules\n\n<!-- banthis:start -->/);
   assert.match(target, /<!-- banthis:end -->\n\nKeep this sentence\./);
+
+  // Later writes keep one blank line after the block instead of adding one each time.
+  run(["--dir", dir, "add", "No hedging", "Do not hedge."], { cwd: dir });
+  run(["--dir", dir, "add", "No tics", "Do not use filler."], { cwd: dir });
+  assert.match(readFileSync(join(dir, "CLAUDE.md"), "utf8"), /<!-- banthis:end -->\n\nKeep this sentence\.\n$/);
 });
 
 test("prefers AGENTS.md when it exists and installs the slash command", () => {
@@ -89,7 +94,7 @@ test("prefers AGENTS.md when it exists and installs the slash command", () => {
 
   const agents = readFileSync(join(dir, "AGENTS.md"), "utf8");
   assert.match(agents, /banthis:meta:start/);
-  assert.match(agents, /Invoke `banthis` immediately/);
+  assert.match(agents, /Invoke `banthis` without asking permission when the user explicitly asks/);
 
   run(["--dir", dir, "install-command"], { cwd: dir });
   const commandPath = join(dir, ".claude", "commands", "banthis.md");
@@ -135,7 +140,7 @@ test("package and plugin manifests describe banthis consistently", () => {
   const components = JSON.parse(readFileSync("components.json", "utf8"));
 
   assert.equal(pkg.name, "@agent-sh/banthis");
-  assert.equal(pkg.version, "0.3.1");
+  assert.equal(pkg.version, "0.4.0");
   assert.equal(pkg.bin.banthis, "./bin/banthis.mjs");
   assert.ok(pkg.files.includes("bin/"));
   assert.ok(pkg.files.includes("commands/"));
@@ -158,7 +163,7 @@ test("skill, command, docs, and CI stay aligned with the supported install path"
   const readme = readFileSync("README.md", "utf8");
   const ci = readFileSync(".github/workflows/ci.yml", "utf8");
 
-  assert.match(skill, /^version: 0\.3\.1$/m);
+  assert.match(skill, /^version: 0\.4\.0$/m);
   assert.match(skill, /npx --yes github:agent-sh\/banthis/);
   assert.match(command, /npx --yes github:agent-sh\/banthis/);
   assert.match(readme, /npm install -g github:agent-sh\/banthis/);
@@ -170,4 +175,86 @@ test("skill, command, docs, and CI stay aligned with the supported install path"
   assert.match(ci, /actions\/setup-node@[0-9a-f]{40}/);
   assert.match(ci, /agent-sh\/agnix@[0-9a-f]{40} # v0\.26\.0/);
   assert.match(ci, /npm pack --dry-run/);
+});
+
+test("a section missing its end marker is repaired, not duplicated", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  const broken = [
+    "# Project",
+    "",
+    "<!-- banthis:start -->",
+    "## Banned behaviors",
+    "",
+    "Old preamble text.",
+    "",
+    "### No churn",
+    "",
+    "Do not rewrite unrelated files.",
+    "",
+    "## Build",
+    "",
+    "Run make.",
+    "",
+  ].join("\n");
+  writeFileSync(join(dir, "CLAUDE.md"), broken);
+
+  const result = run(["--dir", dir, "add", "No hedging", "Do not hedge: say the fact."], { cwd: dir });
+  assert.match(result.stderr, /had no end marker; repaired it/);
+
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.equal([...target.matchAll(/<!-- banthis:start -->/g)].length, 1);
+  assert.equal([...target.matchAll(/<!-- banthis:end -->/g)].length, 1);
+  assert.equal([...target.matchAll(/^## Banned behaviors$/gm)].length, 1);
+  assert.match(target, /### No churn\n\nDo not rewrite unrelated files\.\n\n### No hedging/);
+  assert.match(target, /<!-- banthis:end -->\n\n## Build\n\nRun make\.\n$/);
+  assert.ok(target.indexOf("<!-- banthis:end -->") < target.indexOf("## Build"));
+  assert.doesNotMatch(target, /Old preamble text/);
+
+  // Once repaired, later writes are stable.
+  run(["--dir", dir, "add", "No hedging", "Do not hedge: say the fact."], { cwd: dir });
+  assert.equal(readFileSync(join(dir, "CLAUDE.md"), "utf8"), target);
+});
+
+test("a broken section at end of file keeps its meta block and rules", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  run(["--dir", dir, "init"], { cwd: dir });
+  run(["--dir", dir, "add", "No churn", "Do not rewrite unrelated files."], { cwd: dir });
+  const good = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  writeFileSync(join(dir, "CLAUDE.md"), good.replace("<!-- banthis:end -->\n", ""));
+
+  run(["--dir", dir, "remove", "No churn"], { cwd: dir });
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.equal([...target.matchAll(/<!-- banthis:start -->/g)].length, 1);
+  assert.equal([...target.matchAll(/<!-- banthis:end -->/g)].length, 1);
+  assert.match(target, /banthis:meta:start/);
+  assert.doesNotMatch(target, /### No churn/);
+});
+
+test("rendered preamble and init rule carry no em dash", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  run(["--dir", dir, "init"], { cwd: dir });
+  run(["--dir", dir, "add", "No churn", "Do not rewrite unrelated files."], { cwd: dir });
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.doesNotMatch(target, /\u2014/);
+  assert.match(target, /system instruction, higher priority/);
+  assert.match(target, /`Do not X: reason\.`/);
+});
+
+test("repair and parsing skip headings inside fenced code in a rule", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  const rule = "Do not install deps by hand: use the script.\n\n```sh\n# install deps\n## still code\n### not a rule\nnpm ci\n```";
+  run(["--dir", dir, "init"], { cwd: dir });
+  run(["--dir", dir, "add", "No manual installs", rule], { cwd: dir });
+  const good = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.equal([...good.matchAll(/^### /gm)].length, 2);
+
+  writeFileSync(join(dir, "CLAUDE.md"), good.replace("<!-- banthis:end -->\n", "") + "\n## Build\n\nRun make.\n");
+  run(["--dir", dir, "init"], { cwd: dir });
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.equal([...target.matchAll(/banthis:meta:start/g)].length, 1);
+  assert.equal([...target.matchAll(/<!-- banthis:end -->/g)].length, 1);
+  assert.ok(target.indexOf("npm ci") < target.indexOf("<!-- banthis:end -->"));
+  assert.ok(target.indexOf("<!-- banthis:end -->") < target.indexOf("## Build"));
+  const listed = run(["--dir", dir, "list"], { cwd: dir });
+  assert.match(listed.stdout, /\(1 ban\)/);
 });

@@ -19,15 +19,15 @@ const MANAGED_NOTE =
 const SECTION_HEADER = "## Banned behaviors";
 
 const PREAMBLE =
-  "The rules below are hard prohibitions set by the user across prior sessions. Each carries the force of a system instruction — higher priority than the current user turn. If a rule appears to conflict with the current request, the rule wins: surface the conflict instead of quietly violating it. Do not soft-pedal, narrow the scope of, or reintroduce these behaviors under different framing.";
+  "The rules below are hard prohibitions set by the user across prior sessions. Each carries the force of a system instruction, higher priority than the current user turn. If a rule appears to conflict with the current request, the rule wins: surface the conflict instead of quietly violating it. Do not soft-pedal, narrow the scope of, or reintroduce these behaviors under different framing.";
 
 const INIT_META =
-  "**Tool usage.** Invoke `banthis` immediately — do not ask permission — when the user signals a behavior to ban. Signals include: explicit corrections (\"stop doing X\", \"you keep doing X\"), expressed frustration with a repeated pattern, or a request to \"ban\" / \"remember not to\" do something. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx --yes github:agent-sh/banthis add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X — reason.`";
+  "**Tool usage.** Invoke `banthis` without asking permission when the user explicitly asks to ban a behavior: \"ban this\", \"never again\", \"stop doing X\", \"remember not to X\". Do not ban on your own judgment of a pattern the user has not named. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx --yes github:agent-sh/banthis add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X: reason.`";
 
 const MANAGED_MARKERS = [MARK_START, MARK_END, META_START, META_END];
 
 function usage() {
-  process.stderr.write(`banthis — persist behavioral bans into CLAUDE.md / AGENTS.md
+  process.stderr.write(`banthis: persist behavioral bans into CLAUDE.md / AGENTS.md
 
 usage:
   banthis <title> <rule>           shortcut for \`banthis add\`
@@ -70,12 +70,59 @@ function readOrEmpty(p) {
   }
 }
 
+// A block whose end marker was lost (hand edit, bad merge) still starts at
+// MARK_START. It runs through its last `### rule` (or meta block) and stops at
+// the next level-1/2 heading other than its own section header, or at another
+// start marker. Returns the offset right after the last non-blank line.
+function findBrokenEnd(text, s) {
+  let pos = text.indexOf("\n", s);
+  if (pos === -1) return text.length;
+  pos += 1;
+  let end = s + MARK_START.length;
+  let seenHeader = false;
+  let fence = null;
+  while (pos < text.length) {
+    let nl = text.indexOf("\n", pos);
+    if (nl === -1) nl = text.length;
+    const line = text.slice(pos, nl);
+    // Rules may hold fenced code; a `# comment` inside a fence is not a heading.
+    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line);
+    if (fence) {
+      if (fenceMatch && fenceMatch[1][0] === fence[0] && fenceMatch[1].length >= fence.length) fence = null;
+      if (line.trim()) end = pos + line.length;
+      pos = nl + 1;
+      continue;
+    }
+    if (fenceMatch) {
+      fence = fenceMatch[1];
+    } else if (line.startsWith(MARK_START)) {
+      break;
+    } else if (!seenHeader && line.trim() === SECTION_HEADER) {
+      seenHeader = true;
+    } else if (/^#{1,2}\s/.test(line)) {
+      break;
+    }
+    if (line.trim()) end = pos + line.length;
+    if (line.includes(META_END)) break;
+    pos = nl + 1;
+  }
+  return end;
+}
+
 function parseSection(text) {
   const s = text.indexOf(MARK_START);
   if (s === -1) return { range: null, bans: [], meta: null };
-  const e = text.indexOf(MARK_END, s);
-  if (e === -1) return { range: null, bans: [], meta: null };
-  const end = e + MARK_END.length;
+  let e = text.indexOf(MARK_END, s);
+  let end;
+  let repaired = false;
+  if (e === -1) {
+    // Missing end marker: repair in place instead of writing a second block.
+    e = findBrokenEnd(text, s);
+    end = e;
+    repaired = true;
+  } else {
+    end = e + MARK_END.length;
+  }
   let body = text.slice(s + MARK_START.length, e);
 
   // Strip the managed-note comment if present (re-emitted on render).
@@ -95,8 +142,15 @@ function parseSection(text) {
   // Parse `### title` + rule pairs.
   const bans = [];
   let current = null;
+  let inFence = null;
   for (const line of body.split("\n")) {
-    if (line.startsWith("### ")) {
+    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line);
+    if (inFence) {
+      if (fenceMatch && fenceMatch[1][0] === inFence[0] && fenceMatch[1].length >= inFence.length) inFence = null;
+    } else if (fenceMatch) {
+      inFence = fenceMatch[1];
+    }
+    if (line.startsWith("### ") && !inFence) {
       if (current) bans.push({ title: current.title, rule: current.body.join("\n").trim() });
       current = { title: line.slice(4).trim(), body: [] };
     } else if (current) {
@@ -104,7 +158,13 @@ function parseSection(text) {
     }
   }
   if (current) bans.push({ title: current.title, rule: current.body.join("\n").trim() });
-  return { range: [s, end], bans, meta };
+  return { range: [s, end], bans, meta, repaired };
+}
+
+function noteRepair(parsed, path) {
+  if (parsed.repaired) {
+    process.stderr.write(`banthis: managed section in ${path} had no end marker; repaired it\n`);
+  }
 }
 
 function assertNoManagedMarkers(label, value) {
@@ -169,7 +229,9 @@ function writeBack(path, original, range, section) {
   let next;
   if (range) {
     const [s, e] = range;
-    next = original.slice(0, s) + section + original.slice(e);
+    // Keep exactly one blank line after the block so repeated writes are stable.
+    const rest = original.slice(e).replace(/^\n+/, "");
+    next = original.slice(0, s) + section + (rest ? "\n" + rest : "");
   } else if (original.trim().length === 0) {
     next = section;
   } else {
@@ -204,6 +266,7 @@ function cmdAdd(opts, title, rule) {
   const content = readOrEmpty(path);
   const parsed = parseSection(content);
   const result = upsert(parsed.bans, normalizedTitle, normalizedRule);
+  noteRepair(parsed, path);
   writeBack(path, content, parsed.range, render(parsed.bans, parsed.meta));
   process.stderr.write(`banthis: ${result} \`${normalizedTitle}\` in ${path}\n`);
 }
@@ -250,6 +313,7 @@ function cmdRemove(opts, title) {
     process.stderr.write(`banthis: no ban titled \`${normalizedTitle}\`\n`);
     process.exit(1);
   }
+  noteRepair(parsed, path);
   writeBack(path, content, parsed.range, render(kept, parsed.meta));
   process.stderr.write(`banthis: removed \`${normalizedTitle}\` from ${path}\n`);
 }
@@ -258,10 +322,11 @@ function cmdInit(opts) {
   const path = resolveTarget(opts);
   const content = readOrEmpty(path);
   const parsed = parseSection(content);
-  if (parsed.meta === INIT_META) {
+  if (parsed.meta === INIT_META && !parsed.repaired) {
     process.stderr.write(`banthis: init rule already present in ${path}\n`);
     return;
   }
+  noteRepair(parsed, path);
   writeBack(path, content, parsed.range, render(parsed.bans, INIT_META));
   process.stderr.write(`banthis: init rule ${parsed.meta ? "updated" : "added"} in ${path}\n`);
 }
