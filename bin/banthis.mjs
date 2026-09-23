@@ -80,12 +80,24 @@ function findBrokenEnd(text, s) {
   pos += 1;
   let end = s + MARK_START.length;
   let seenHeader = false;
+  let fence = null;
   while (pos < text.length) {
     let nl = text.indexOf("\n", pos);
     if (nl === -1) nl = text.length;
     const line = text.slice(pos, nl);
-    if (line.startsWith(MARK_START)) break;
-    if (!seenHeader && line.trim() === SECTION_HEADER) {
+    // Rules may hold fenced code; a `# comment` inside a fence is not a heading.
+    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line);
+    if (fence) {
+      if (fenceMatch && fenceMatch[1][0] === fence[0] && fenceMatch[1].length >= fence.length) fence = null;
+      if (line.trim()) end = pos + line.length;
+      pos = nl + 1;
+      continue;
+    }
+    if (fenceMatch) {
+      fence = fenceMatch[1];
+    } else if (line.startsWith(MARK_START)) {
+      break;
+    } else if (!seenHeader && line.trim() === SECTION_HEADER) {
       seenHeader = true;
     } else if (/^#{1,2}\s/.test(line)) {
       break;
@@ -130,8 +142,15 @@ function parseSection(text) {
   // Parse `### title` + rule pairs.
   const bans = [];
   let current = null;
+  let inFence = null;
   for (const line of body.split("\n")) {
-    if (line.startsWith("### ")) {
+    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line);
+    if (inFence) {
+      if (fenceMatch && fenceMatch[1][0] === inFence[0] && fenceMatch[1].length >= inFence.length) inFence = null;
+    } else if (fenceMatch) {
+      inFence = fenceMatch[1];
+    }
+    if (line.startsWith("### ") && !inFence) {
       if (current) bans.push({ title: current.title, rule: current.body.join("\n").trim() });
       current = { title: line.slice(4).trim(), body: [] };
     } else if (current) {

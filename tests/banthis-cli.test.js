@@ -239,3 +239,22 @@ test("rendered preamble and init rule carry no em dash", () => {
   assert.match(target, /system instruction, higher priority/);
   assert.match(target, /`Do not X: reason\.`/);
 });
+
+test("repair and parsing skip headings inside fenced code in a rule", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  const rule = "Do not install deps by hand: use the script.\n\n```sh\n# install deps\n## still code\n### not a rule\nnpm ci\n```";
+  run(["--dir", dir, "init"], { cwd: dir });
+  run(["--dir", dir, "add", "No manual installs", rule], { cwd: dir });
+  const good = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.equal([...good.matchAll(/^### /gm)].length, 2);
+
+  writeFileSync(join(dir, "CLAUDE.md"), good.replace("<!-- banthis:end -->\n", "") + "\n## Build\n\nRun make.\n");
+  run(["--dir", dir, "init"], { cwd: dir });
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.equal([...target.matchAll(/banthis:meta:start/g)].length, 1);
+  assert.equal([...target.matchAll(/<!-- banthis:end -->/g)].length, 1);
+  assert.ok(target.indexOf("npm ci") < target.indexOf("<!-- banthis:end -->"));
+  assert.ok(target.indexOf("<!-- banthis:end -->") < target.indexOf("## Build"));
+  const listed = run(["--dir", dir, "list"], { cwd: dir });
+  assert.match(listed.stdout, /\(1 ban\)/);
+});
