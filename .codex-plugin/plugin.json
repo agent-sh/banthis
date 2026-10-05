@@ -5,7 +5,7 @@
   "interface": {
     "displayName": "Banthis",
     "shortDescription": "Durable negative memory for agent behavior",
-    "longDescription": "Banthis lets agents turn user frustration into persistent hard prohibitions in CLAUDE.md or AGENTS.md, with a tiny CLI for adding, listing, showing, removing, and initializing behavior bans.",
+    "longDescription": "Banthis lets agents turn a behavior the user wants stopped into a standing rule in CLAUDE.md or AGENTS.md, written after the user confirms the wording, with a tiny CLI for adding, listing, showing, removing, and initializing behavior bans.",
     "developerName": "Avi Fenesh",
     "category": "developer-tools",
     "capabilities": [

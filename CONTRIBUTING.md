@@ -6,8 +6,8 @@
 
 - The core logic lives in `bin/banthis.mjs`. Keep it simple and dependency-free.
 - The slash command (`commands/banthis.md`) and the `init` meta-rule are critical for discoverability.
-- When changing how rules are rendered into `CLAUDE.md`/`AGENTS.md`, be extremely careful about backward compatibility.
-- The skill in `skills/banthis/SKILL.md` teaches agents when to invoke the tool automatically.
+- When changing how rules are rendered into `CLAUDE.md`/`AGENTS.md`, keep backward compatibility: existing installs parse the managed markers.
+- The skill in `skills/banthis/SKILL.md` teaches agents when to propose a rule and to write it only after the user confirms the wording.
 
 ## Testing
 
