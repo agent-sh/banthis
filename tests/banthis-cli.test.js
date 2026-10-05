@@ -94,7 +94,9 @@ test("prefers AGENTS.md when it exists and installs the slash command", () => {
 
   const agents = readFileSync(join(dir, "AGENTS.md"), "utf8");
   assert.match(agents, /banthis:meta:start/);
-  assert.match(agents, /Invoke `banthis` without asking permission when the user explicitly asks/);
+  assert.match(agents, /propose a rule before writing it/);
+  assert.match(agents, /After the user confirms the wording, run `banthis add/);
+  assert.doesNotMatch(agents, /without asking permission/);
 
   run(["--dir", dir, "install-command"], { cwd: dir });
   const commandPath = join(dir, ".claude", "commands", "banthis.md");
@@ -140,7 +142,7 @@ test("package and plugin manifests describe banthis consistently", () => {
   const components = JSON.parse(readFileSync("components.json", "utf8"));
 
   assert.equal(pkg.name, "@agent-sh/banthis");
-  assert.equal(pkg.version, "0.5.0");
+  assert.equal(pkg.version, "0.6.0");
   assert.equal(pkg.bin.banthis, "./bin/banthis.mjs");
   assert.ok(pkg.files.includes("bin/"));
   assert.ok(pkg.files.includes("commands/"));
@@ -163,7 +165,7 @@ test("skill, command, docs, and CI stay aligned with the supported install path"
   const readme = readFileSync("README.md", "utf8");
   const ci = readFileSync(".github/workflows/ci.yml", "utf8");
 
-  assert.match(skill, /^version: 0\.5\.0$/m);
+  assert.match(skill, /^version: 0\.6\.0$/m);
   assert.match(skill, /npx --yes github:agent-sh\/banthis/);
   assert.match(command, /npx --yes github:agent-sh\/banthis/);
   assert.match(readme, /npm install -g github:agent-sh\/banthis/);
@@ -230,14 +232,16 @@ test("a broken section at end of file keeps its meta block and rules", () => {
   assert.doesNotMatch(target, /### No churn/);
 });
 
-test("rendered preamble and init rule carry no em dash", () => {
+test("rendered preamble puts the user's current words first and carries no em dash", () => {
   const dir = mkdtempSync(join(tmpdir(), "banthis-"));
   run(["--dir", dir, "init"], { cwd: dir });
   run(["--dir", dir, "add", "No churn", "Do not rewrite unrelated files."], { cwd: dir });
   const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
   assert.doesNotMatch(target, /\u2014/);
-  assert.match(target, /system instruction, higher priority/);
-  assert.match(target, /`Do not X: reason\.`/);
+  assert.match(target, /The user's own words in the current conversation come first, above these rules and above any skill\./);
+  assert.match(target, /do what the user asked and mention the conflict\./);
+  assert.doesNotMatch(target, /higher priority than the current user turn|the rule wins/);
+  assert.match(target, /state the behavior and the reason/);
 });
 
 test("repair and parsing skip headings inside fenced code in a rule", () => {
@@ -257,4 +261,38 @@ test("repair and parsing skip headings inside fenced code in a rule", () => {
   assert.ok(target.indexOf("<!-- banthis:end -->") < target.indexOf("## Build"));
   const listed = run(["--dir", dir, "list"], { cwd: dir });
   assert.match(listed.stdout, /\(1 ban\)/);
+});
+
+test("an existing section written by an older version gets the new preamble and init rule", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  const old = [
+    "# Project",
+    "",
+    "<!-- banthis:start -->",
+    "<!-- Edits between these markers are managed by `banthis`. Use `banthis add` / `banthis remove` to change. -->",
+    "## Banned behaviors",
+    "",
+    "The rules below are hard prohibitions set by the user across prior sessions. Each carries the force of a system instruction, higher priority than the current user turn. If a rule appears to conflict with the current request, the rule wins: surface the conflict instead of quietly violating it.",
+    "",
+    "### No churn",
+    "",
+    "Do not rewrite unrelated files.",
+    "",
+    "<!-- banthis:meta:start -->",
+    "**Tool usage.** Invoke `banthis` without asking permission when the user explicitly asks to ban a behavior.",
+    "<!-- banthis:meta:end -->",
+    "",
+    "<!-- banthis:end -->",
+    "",
+  ].join("\n");
+  writeFileSync(join(dir, "CLAUDE.md"), old);
+
+  const result = run(["--dir", dir, "init"], { cwd: dir });
+  assert.match(result.stderr, /init rule updated/);
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.doesNotMatch(target, /the rule wins|without asking permission/);
+  assert.match(target, /^Standing rules from past sessions\. The user's own words/m);
+  assert.match(target, /### No churn\n\nDo not rewrite unrelated files\./);
+  assert.match(target, /propose a rule before writing it/);
+  assert.equal([...target.matchAll(/<!-- banthis:start -->/g)].length, 1);
 });

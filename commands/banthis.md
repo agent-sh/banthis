@@ -4,25 +4,22 @@ argument-hint: [free-form description of behavior to ban]
 allowed-tools: Bash(banthis:*), Bash(npx:*)
 ---
 
-The user wants a behavior banned for good. Write it into the project's `CLAUDE.md` or `AGENTS.md` with the `banthis` CLI so it survives across sessions.
+The user wants an agent behavior to stop in future sessions. Draft a rule, confirm the wording with the user, then save it to the project's `CLAUDE.md` or `AGENTS.md` with the `banthis` CLI.
 
 Behavior to ban: $ARGUMENTS
 
-If that is empty, use the correction the user made most recently and most explicitly in this conversation.
+If that is empty, use the user's most recent explicit correction in this conversation.
 
-Write two strings:
+Draft three things:
 
-- **title**: under 60 characters, framed as a prohibition, e.g. `No 'let me be honest' preambles`.
-- **rule**: one or two sentences in the form `Do not X: reason.` The reason is what lets a future agent apply the rule to cases the title does not name.
+- **title**: under 60 characters, e.g. `No 'let me be honest' preambles`.
+- **rule**: one or two plain sentences that state the behavior and the reason, e.g. `Start with the answer, without a "let me be honest" preamble: it adds nothing.` The reason lets a future agent handle cases the title does not name.
+- **scope**: this project by default. Propose `--global` only when the behavior applies in every project (verbal tics, generic model habits).
 
-Run it. Use `banthis` if it is on PATH, otherwise `npx --yes github:agent-sh/banthis`:
+Show the user the title, rule and scope and ask them to confirm or edit. Write the rule only after they confirm. Use `banthis` if it is on PATH, otherwise `npx --yes github:agent-sh/banthis`:
 
 ```bash
-banthis add "<title>" "<rule>"
+banthis add "<title>" "<rule>"    # add --global for a user-wide rule
 ```
-
-Add `--global` when the behavior applies everywhere (verbal tics, hedging, generic model habits). Leave it off for project-specific rules, e.g. `Do not edit migration files directly`.
-
-Do not ask for confirmation first: the user already asked for the ban.
 
 Done when the command exits 0 and names the file it wrote. Reply with one line: `Banned: <title>`. If it fails, show the error and the exact command to retry.
