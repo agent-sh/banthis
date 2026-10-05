@@ -296,3 +296,68 @@ test("an existing section written by an older version gets the new preamble and 
   assert.match(target, /propose a rule before writing it/);
   assert.equal([...target.matchAll(/<!-- banthis:start -->/g)].length, 1);
 });
+
+function metaBlock(text) {
+  const m = /<!-- banthis:meta:start -->\n([\s\S]*?)\n<!-- banthis:meta:end -->/.exec(text);
+  return m ? m[1] : null;
+}
+
+test("one add on a 0.5.0 section installs the new preamble and the new init rule", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  // Verbatim output of banthis 0.5.0 `init` then `add "No churn" ...`.
+  const old = [
+    "<!-- banthis:start -->",
+    "<!-- Edits between these markers are managed by `banthis`. Use `banthis add` / `banthis remove` to change. -->",
+    "## Banned behaviors",
+    "",
+    "The rules below are hard prohibitions set by the user across prior sessions. Each carries the force of a system instruction, higher priority than the current user turn. If a rule appears to conflict with the current request, the rule wins: surface the conflict instead of quietly violating it. Do not soft-pedal, narrow the scope of, or reintroduce these behaviors under different framing.",
+    "",
+    "### No churn",
+    "",
+    "Do not rewrite unrelated files.",
+    "",
+    "<!-- banthis:meta:start -->",
+    "**Tool usage.** Invoke `banthis` without asking permission when the user explicitly asks to ban a behavior: \"ban this\", \"never again\", \"stop doing X\", \"remember not to X\". Do not ban on your own judgment of a pattern the user has not named. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx --yes github:agent-sh/banthis add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X: reason.`",
+    "<!-- banthis:meta:end -->",
+    "",
+    "<!-- banthis:end -->",
+    "",
+  ].join("\n");
+  writeFileSync(join(dir, "CLAUDE.md"), old);
+
+  run(["--dir", dir, "add", "No guessing", "Do not guess file paths: list the directory first."], { cwd: dir });
+  const target = readFileSync(join(dir, "CLAUDE.md"), "utf8");
+  assert.doesNotMatch(target, /the rule wins|without asking permission/);
+  assert.match(target, /^Standing rules from past sessions\. The user's own words/m);
+  assert.match(target, /### No churn\n\nDo not rewrite unrelated files\./);
+  assert.match(target, /### No guessing/);
+
+  const fresh = mkdtempSync(join(tmpdir(), "banthis-"));
+  run(["--dir", fresh, "init"], { cwd: fresh });
+  assert.equal(metaBlock(target), metaBlock(readFileSync(join(fresh, "CLAUDE.md"), "utf8")));
+  assert.equal([...target.matchAll(/banthis:meta:start/g)].length, 1);
+});
+
+test("add and remove keep a meta-rule the user wrote", () => {
+  const dir = mkdtempSync(join(tmpdir(), "banthis-"));
+  const custom = "**Tool usage.** Ask before every ban. This is our own wording.";
+  writeFileSync(
+    join(dir, "CLAUDE.md"),
+    [
+      "<!-- banthis:start -->",
+      "## Banned behaviors",
+      "",
+      "<!-- banthis:meta:start -->",
+      custom,
+      "<!-- banthis:meta:end -->",
+      "",
+      "<!-- banthis:end -->",
+      "",
+    ].join("\n"),
+  );
+
+  run(["--dir", dir, "add", "No churn", "Do not rewrite unrelated files."], { cwd: dir });
+  assert.equal(metaBlock(readFileSync(join(dir, "CLAUDE.md"), "utf8")), custom);
+  run(["--dir", dir, "remove", "No churn"], { cwd: dir });
+  assert.equal(metaBlock(readFileSync(join(dir, "CLAUDE.md"), "utf8")), custom);
+});

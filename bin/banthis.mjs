@@ -24,6 +24,21 @@ const PREAMBLE =
 const INIT_META =
   "**Tool usage.** When the user asks to ban a behavior (\"ban this\", \"never again\", \"stop doing X\", \"remember not to X\"), propose a rule before writing it: a title under 60 characters, one or two plain sentences that state the behavior and the reason, and the scope (this project, or `--global` for every project; prefer this project unless the behavior applies everywhere). After the user confirms the wording, run `banthis add \"<title>\" \"<rule>\"` (or `npx --yes github:agent-sh/banthis add ...` if it is not installed), with `--global` for a user-wide rule.";
 
+// INIT_META texts that earlier releases wrote. `add` and `remove` swap one of
+// these for the current INIT_META; any other meta text is the user's and stays.
+const SHIPPED_INIT_META = new Set([
+  // 0.3.0
+  "**Tool usage.** Invoke `banthis` immediately \u2014 do not ask permission \u2014 when the user signals a behavior to ban. Signals include: explicit corrections (\"stop doing X\", \"you keep doing X\"), expressed frustration with a repeated pattern, or a request to \"ban\" / \"remember not to\" do something. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx banthis@latest add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X \u2014 reason.`",
+  // 0.3.1
+  "**Tool usage.** Invoke `banthis` immediately \u2014 do not ask permission \u2014 when the user signals a behavior to ban. Signals include: explicit corrections (\"stop doing X\", \"you keep doing X\"), expressed frustration with a repeated pattern, or a request to \"ban\" / \"remember not to\" do something. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx --yes github:agent-sh/banthis add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X \u2014 reason.`",
+  // 0.4.0 and 0.5.0
+  "**Tool usage.** Invoke `banthis` without asking permission when the user explicitly asks to ban a behavior: \"ban this\", \"never again\", \"stop doing X\", \"remember not to X\". Do not ban on your own judgment of a pattern the user has not named. Run `banthis add \"<short title>\" \"<rule and reason>\"` (or `npx --yes github:agent-sh/banthis add ...` if not installed globally). Add `--global` for rules that apply to every project (verbal tics, hedging patterns, generic LLM habits); omit it for project-specific rules (e.g. \"do not edit migration files directly\"). Phrase rules as direct prohibitions with the reason: `Do not X: reason.`",
+]);
+
+function currentMeta(meta) {
+  return meta && SHIPPED_INIT_META.has(meta) ? INIT_META : meta;
+}
+
 const MANAGED_MARKERS = [MARK_START, MARK_END, META_START, META_END];
 
 function usage() {
@@ -267,7 +282,7 @@ function cmdAdd(opts, title, rule) {
   const parsed = parseSection(content);
   const result = upsert(parsed.bans, normalizedTitle, normalizedRule);
   noteRepair(parsed, path);
-  writeBack(path, content, parsed.range, render(parsed.bans, parsed.meta));
+  writeBack(path, content, parsed.range, render(parsed.bans, currentMeta(parsed.meta)));
   process.stderr.write(`banthis: ${result} \`${normalizedTitle}\` in ${path}\n`);
 }
 
@@ -314,7 +329,7 @@ function cmdRemove(opts, title) {
     process.exit(1);
   }
   noteRepair(parsed, path);
-  writeBack(path, content, parsed.range, render(kept, parsed.meta));
+  writeBack(path, content, parsed.range, render(kept, currentMeta(parsed.meta)));
   process.stderr.write(`banthis: removed \`${normalizedTitle}\` from ${path}\n`);
 }
 

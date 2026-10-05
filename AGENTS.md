@@ -17,7 +17,7 @@ A dependency-free Node.js CLI (`bin/banthis.mjs`), one slash command (`commands/
 
 - The managed section markers (`<!-- banthis:start -->`, `<!-- banthis:end -->`, and the `banthis:meta` pair) and the `## Banned behaviors` header are parsed by existing installs. Keep them backward compatible.
 - The preamble and the `init` meta-rule (`PREAMBLE` and `INIT_META` in `bin/banthis.mjs`) are the text agents read in every session. Change them deliberately and update the tests that pin them.
-- Keep the CLI commands, flags and exit codes stable: `add`, `list`, `show`, `remove`, `init`, `path`, `install-command`, `--global`, `--file`, `--dir`.
+- Keep the CLI commands, flags and exit codes stable: `add`, the bare `banthis <title> <rule>` shortcut for `add`, `list`, `show`, `remove`, `init`, `path`, `install-command`, `--global`, `--file`, `--dir`.
 
 ## Testing
 

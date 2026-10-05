@@ -4,7 +4,7 @@
 
 - The rendered preamble now puts the user first: "Standing rules from past sessions. The user's own words in the current conversation come first, above these rules and above any skill. When a rule seems to conflict with what the user is asking now, do what the user asked and mention the conflict." It replaces the "hard prohibitions ... the rule wins" text. Existing sections pick it up on the next `add`, `remove` or `init`.
 - The `init` meta-rule, the `/banthis` command and the skill now have the agent propose the title, rule and scope and write it only after the user confirms the wording, instead of writing it without asking. Rules are phrased as plain behavior with the reason; project scope is the default and `--global` is for behaviors that apply everywhere.
-- CLI commands, flags, exit codes and the managed markers are unchanged. Run `banthis init` in a file that already has the meta-rule to update it.
+- CLI commands, flags, exit codes and the managed markers are unchanged. A meta-rule that an earlier release wrote is replaced with the new one on the next `add`, `remove` or `init`; meta text you wrote yourself is kept.
 - `AGENTS.md` trimmed to the repo contract: markers, preamble and meta-rule, CLI surface, tests, versioning.
 
 ## 0.5.0
