@@ -16,19 +16,28 @@ Or use via `npx`:
 npx --yes github:agent-sh/banthis add "No hedging" "Do not start responses with 'To be honest' or 'I think': it undermines confidence."
 ```
 
+The repo is also a Claude Code plugin marketplace that ships the `/banthis` command and the skill:
+
+```
+/plugin marketplace add agent-sh/banthis
+/plugin install banthis@banthis
+```
+
 ## Core Commands
 
 - `banthis <title> <rule>`: Quick add (shortcut for `add`)
 - `banthis add <title> <rule>`: Add or update a banned behavior
 - `banthis list`: List current bans
-- `banthis remove <title>`: Remove a ban
+- `banthis show`: Print the managed section verbatim
+- `banthis remove <title>`: Remove a ban (title match is case-insensitive)
 - `banthis init`: Install the meta-rule so agents know to propose a rule and save it with `banthis` once you confirm
+- `banthis path`: Print the file `banthis` would write
 - `banthis install-command`: Drop the `/banthis` slash command into `.claude/commands/`
 
 ### Flags
 
 - `-g, --global`: Target `~/.claude/CLAUDE.md` (user-wide)
-- `--file <NAME>`: Target specific filename
+- `--file <NAME>`: Target specific filename (default: `CLAUDE.md`, or `AGENTS.md` when only that file exists)
 - `--dir <PATH>`: Target specific directory
 
 ## How It Works
